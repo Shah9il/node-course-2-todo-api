@@ -3,12 +3,16 @@ require('./config/config.js');
 const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
+const bcrypt = require('bcryptjs');
+
 const {ObjectID} = require('mongodb');
 
 var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
 var {authenticate} = require('./middleware/authenticate');
+
+
 
 var app = express();
 
@@ -118,6 +122,43 @@ app.get('/users/me',authenticate,(req,res)=>{
     res.send(req.user);
 });
 
+app.post('/users/login',(req,res)=>{
+    var body = _.pick(req.body,['email','password']);
+    User.findByCredentials(body.email,body.password).then((user)=>{
+        return user.generateAuthToken().then((token)=>{
+            res.header('x-auth',token).status(200).send(user);
+        });
+    }).catch((e)=>{
+        res.status(400).send();
+    });
+});
+
+app.post('/users/login',(req,res)=>{
+    var body = _.pick(req.body,['email','password']);
+    User.findByCredentials(body.email,body.password).then((user)=>{
+        return user.generateAuthToken().then((token)=>{
+            res.header('x-auth',token).status(200).send(user);
+        });
+    }).catch((err)=>{
+        res.status(400).send();
+    });
+});
+
+/* 
+app.post('/users/login',(req,res)=>{
+    var body = _.pick(req.body,['email','password']);
+    User.find({
+        email: body.email
+    }).then((user)=>{
+        bcrypt.compare(body.password,user.password,(err,ress)=>{
+            console.log(body.password);
+            console.log(user.password);
+            console.log(ress);
+            res.send(user);
+        });
+    });
+});
+ */
 
 app.listen(port,()=>{
     console.log(`Started up at port ${port}`);
